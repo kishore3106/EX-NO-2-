@@ -37,52 +37,144 @@ To encrypt a message, one would break the message into digrams (groups of 2 lett
 
 ## PROGRAM:
 ~~~
-#include<stdio.h>
-#include<string.h>
-int main()
-{
-    unsigned int a[3][3]={{6,24,1},{13,16,10},{20,17,15}};
-    unsigned int b[3][3]={{8,5,10},{21,8,21},{21,12,8}};
-    int i,j, t=0;
-    unsigned int c[20],d[20];
-    char msg[20];
-    scanf("%s",msg);
-    printf("Enter plain text:%s\n",msg);
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#define SIZE 30
 
-    for(i=0;i<strlen(msg);i++)
-    {
-        c[i]=msg[i]-65;
-        printf("%d ",c[i]);
-    }
-    for(i=0;i<3;i++)
-    {
-        t=0;
-        for(j=0;j<3;j++)
-        {
-            t=t+(a[i][j]*c[j]);
+// Convert characters to lowercase
+void toLowerCase(char plain[], int ps) {
+    for (int i = 0; i < ps; i++) {
+        if (plain[i] >= 'A' && plain[i] <= 'Z') {
+            plain[i] += 32;
         }
-        d[i]=t%26;
     }
-    printf("\nEncrypted Cipher Text :");
-    for(i=0;i<3;i++)
-    printf(" %c",d[i]+65);
-    for(i=0;i<3;i++)
-    {
-        t=0;
-        for(j=0;j<3;j++)
-        {
-            t=t+(b[i][j]*d[j]);
+}
+
+// Remove spaces from the string
+int removeSpaces(char* plain, int ps) {
+    int i, count = 0;
+    for (i = 0; i < ps; i++) {
+        if (plain[i] != ' ')
+            plain[count++] = plain[i];
+    }
+    plain[count] = '\0';
+    return count;
+}
+
+// Generate key table
+void generateKeyTable(char key[], int ks, char keyT[5][5]) {
+    int dicty[26] = {0}, i, j, k;
+    dicty['j' - 'a'] = 1;
+    for (i = 0; i < ks; i++) {
+        if (key[i] != 'j')
+            dicty[key[i] - 'a'] = 2;
+    }
+
+    i = 0; j = 0;
+    for (k = 0; k < ks; k++) {
+        if (dicty[key[k] - 'a'] == 2) {
+            dicty[key[k] - 'a'] -= 1;
+            keyT[i][j++] = key[k];
+            if (j == 5) { i++; j = 0; }
         }
-        c[i]=t%26;
     }
-    printf("\nDecrypted Cipher Text :");
-    for(i=0;i<3;i++)
-    printf(" %c",c[i]+65);
+
+    for (k = 0; k < 26; k++) {
+        if (dicty[k] == 0) {
+            keyT[i][j++] = (char)(k + 'a');
+            if (j == 5) { i++; j = 0; }
+        }
+    }
+}
+
+// Search letters in key table
+void search(char keyT[5][5], char a, char b, int arr[]) {
+    if (a == 'j') a = 'i';
+    if (b == 'j') b = 'i';
+
+    for (int i = 0; i < 5; i++) {
+        for (int j = 0; j < 5; j++) {
+            if (keyT[i][j] == a) {
+                arr[0] = i;
+                arr[1] = j;
+            } else if (keyT[i][j] == b) {
+                arr[2] = i;
+                arr[3] = j;
+            }
+        }
+    }
+}
+
+int mod5(int a) {
+    return (a % 5);
+}
+
+// Make sure length is even
+int prepare(char str[], int len) {
+    if (len % 2 != 0) {
+        str[len++] = 'z';
+        str[len] = '\0';
+    }
+    return len;
+}
+
+// Encrypt using Playfair rules
+void encrypt(char str[], char keyT[5][5], int ps) {
+    int i, a[4];
+    for (i = 0; i < ps; i += 2) {
+        search(keyT, str[i], str[i + 1], a);
+        if (a[0] == a[2]) {
+            str[i] = keyT[a[0]][mod5(a[1] + 1)];
+            str[i + 1] = keyT[a[0]][mod5(a[3] + 1)];
+        } else if (a[1] == a[3]) {
+            str[i] = keyT[mod5(a[0] + 1)][a[1]];
+            str[i + 1] = keyT[mod5(a[2] + 1)][a[1]];
+        } else {
+            str[i] = keyT[a[0]][a[3]];
+            str[i + 1] = keyT[a[2]][a[1]];
+        }
+    }
+}
+
+// Encrypt using Playfair Cipher
+void encryptByPlayfairCipher(char str[], char key[]) {
+    int ps, ks;
+    char keyT[5][5];
+
+    ks = strlen(key);
+    ks = removeSpaces(key, ks);
+    toLowerCase(key, ks);
+
+    ps = strlen(str);
+    toLowerCase(str, ps);
+    ps = removeSpaces(str, ps);
+    ps = prepare(str, ps);
+
+    generateKeyTable(key, ks, keyT);
+    encrypt(str, keyT, ps);
+}
+
+// Driver code
+int main() {
+    printf("Simulating Playfair cipher\n");
+    char str[SIZE], key[SIZE];
+    printf("enter key:");
+    
+    scanf("%s",key);
+    printf("enter plain txt:");
+    scanf("%s",str);
+    printf("Plain text: %s\n", str);
+
+    encryptByPlayfairCipher(str, key);
+    printf("Cipher text: %s\n", str);
+
     return 0;
 }
 ~~~
 ## OUTPUT:
-<img width="1520" height="264" alt="image" src="https://github.com/user-attachments/assets/01db7005-21a2-4a02-b7f0-c0d27f6733c9" />
+<img width="817" height="292" alt="image" src="https://github.com/user-attachments/assets/f225cd49-47c9-4f53-8029-1612456434b9" />
+
 
 
 ## RESULT:
